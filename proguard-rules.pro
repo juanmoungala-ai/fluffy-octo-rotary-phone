@@ -1,0 +1,2 @@
+-keep class com.nucleus.app.MainActivity$Bridge { *; }
+-keepclassmembers class * { @android.webkit.JavascriptInterface <methods>; }

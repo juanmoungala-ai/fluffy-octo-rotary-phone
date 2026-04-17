@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>NUCLEUS — IA Chimie Atomique</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f7f6f2;--surface:#fff;--border:#e2e0d8;--border2:#ccc9be;
+  --ink:#1a1916;--ink2:#4a4840;--ink3:#8a8678;
+  --accent:#1d4ed8;--accent-l:#dbeafe;
+  --red:#b91c1c;--green:#166534;
+  --gold:#92400e;--gold-l:#fef3c7;
+  --pdf:#7c3aed;--pdf-l:#ede9fe;
+  --r:4px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+
+/* ── LAYOUT ── */
+.shell{display:flex;flex-direction:column;height:100vh}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:8px;min-height:52px;flex-shrink:0}
+.wordmark{font-family:'Instrument Serif',serif;font-size:1.1rem;color:var(--ink);white-space:nowrap}
+.wordmark sub{font-family:'DM Mono',monospace;font-size:.48rem;color:var(--ink3);letter-spacing:.1em;vertical-align:baseline;margin-left:4px}
+.sep{flex:1}
+.top-btn{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.06em;color:var(--ink3);background:none;border:1px solid var(--border);border-radius:var(--r);padding:4px 9px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.top-btn:hover{border-color:var(--border2);color:var(--ink)}
+.top-btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+.body-row{display:flex;flex:1;overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;width:290px;flex-shrink:0;overflow:hidden}
+.panel-tabs{display:flex;border-bottom:1px solid var(--border)}
+.ptab{font-family:'DM Mono',monospace;font-size:.57rem;letter-spacing:.08em;color:var(--ink3);background:none;border:none;border-bottom:2px solid transparent;padding:10px 9px;cursor:pointer;transition:all .15s;margin-bottom:-1px;flex:1}
+.ptab.on{color:var(--ink);border-bottom-color:var(--ink)}
+.panel{display:none;flex:1;overflow-y:auto;padding:13px;flex-direction:column;gap:11px}
+.panel.on{display:flex}
+.panel::-webkit-scrollbar{width:3px}
+.panel::-webkit-scrollbar-thumb{background:var(--border)}
+.field-label{font-family:'DM Mono',monospace;font-size:.54rem;letter-spacing:.13em;color:var(--ink3);text-transform:uppercase;margin-bottom:4px}
+.blurb{font-size:.7rem;color:var(--ink3);line-height:1.5;font-style:italic;font-family:'DM Mono',monospace}
+textarea,input[type="text"]{width:100%;font-family:'DM Mono',monospace;font-size:.73rem;color:var(--ink);background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:7px 9px;line-height:1.6;resize:vertical;transition:border-color .15s,box-shadow .15s}
+textarea:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(29,78,216,.08)}
+
+.axiom-list{display:flex;flex-direction:column;gap:5px}
+.axiom-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:7px 9px;display:flex;gap:7px;align-items:flex-start}
+.ax-num{font-family:'DM Mono',monospace;font-size:.54rem;color:var(--accent);font-weight:500;min-width:20px;padding-top:1px}
+.ax-text{flex:1;font-size:.71rem;color:var(--ink2);line-height:1.5}
+.ax-del{background:none;border:none;color:var(--ink3);cursor:pointer;font-size:.66rem;padding:2px;transition:color .15s}
+.ax-del:hover{color:var(--red)}
+
+.pdf-card{background:var(--pdf-l);border:1px solid #c4b5fd;border-radius:var(--r);padding:7px 9px;display:flex;align-items:center;gap:7px;margin-bottom:4px}
+.pdf-icon{font-size:.95rem;flex-shrink:0}
+.pdf-info{flex:1;min-width:0}
+.pdf-name{font-family:'DM Mono',monospace;font-size:.66rem;color:var(--pdf);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pdf-size{font-family:'DM Mono',monospace;font-size:.54rem;color:var(--ink3)}
+.pdf-del{background:none;border:none;color:var(--ink3);cursor:pointer;font-size:.66rem;transition:color .15s}
+.pdf-del:hover{color:var(--red)}
+
+.notice{background:var(--gold-l);border:1px solid #d97706;border-radius:var(--r);padding:7px 9px;font-size:.64rem;color:var(--gold);line-height:1.55;font-family:'DM Mono',monospace}
+.notice-pdf{background:var(--pdf-l);border:1px solid #c4b5fd;border-radius:var(--r);padding:7px 9px;font-size:.64rem;color:var(--pdf);line-height:1.55;font-family:'DM Mono',monospace}
+
+.sev-row{display:flex;gap:5px;flex-wrap:wrap}
+.sev-btn{font-family:'DM Mono',monospace;font-size:.57rem;padding:4px 9px;border:1px solid var(--border);border-radius:20px;background:none;color:var(--ink3);cursor:pointer;transition:all .15s}
+.sev-btn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+.divider{height:1px;background:var(--border)}
+
+.add-btn{font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.06em;background:var(--ink);color:#fff;border:none;border-radius:var(--r);padding:7px 13px;cursor:pointer;align-self:flex-start;transition:background .15s}
+.add-btn:hover{background:var(--accent)}
+.add-btn.pdf-btn{background:var(--pdf)}
+.add-btn.pdf-btn:hover{background:#6d28d9}
+
+/* ── CHAT ── */
+.chat-col{display:flex;flex-direction:column;flex:1;overflow:hidden}
+.chat-topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 14px;height:40px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.chat-title{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.09em;color:var(--ink3);display:flex;align-items:center;gap:7px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 2.4s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.domain-pill{font-family:'DM Mono',monospace;font-size:.54rem;padding:2px 7px;border:1px solid var(--border);border-radius:20px;color:var(--ink3)}
+
+.messages{flex:1;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:16px;scroll-behavior:smooth}
+.messages::-webkit-scrollbar{width:3px}
+.messages::-webkit-scrollbar-thumb{background:var(--border)}
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;opacity:.35;text-align:center}
+.empty-atom{font-size:2rem;animation:spin 8s linear infinite}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.empty p{font-family:'DM Mono',monospace;font-size:.64rem;color:var(--ink3)}
+.msg{display:flex;flex-direction:column;max-width:640px;animation:up .25s ease}
+@keyframes up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.msg.user{align-self:flex-end;align-items:flex-end}
+.msg.ai{align-self:flex-start;align-items:flex-start}
+.msg-role{font-family:'DM Mono',monospace;font-size:.52rem;letter-spacing:.13em;color:var(--ink3);margin-bottom:3px;text-transform:uppercase}
+.bubble{padding:10px 13px;border-radius:var(--r);font-size:.78rem;line-height:1.7;border:1px solid var(--border)}
+.msg.user .bubble{background:var(--ink);color:#fff;border-color:var(--ink);font-family:'DM Sans',sans-serif}
+.msg.ai .bubble{background:var(--surface);color:var(--ink);font-family:'DM Mono',monospace;font-size:.74rem}
+.bubble .ax-ref{display:inline-block;font-size:.54rem;background:var(--accent-l);color:var(--accent);border:1px solid #bfdbfe;border-radius:3px;padding:0 4px;vertical-align:middle;margin:0 2px;font-family:'DM Mono',monospace}
+.bubble strong{font-weight:600}
+.bubble em{font-style:italic;color:var(--ink3)}
+.pdf-attach-preview{display:flex;align-items:center;gap:6px;background:rgba(124,58,237,.08);border:1px solid #c4b5fd;border-radius:3px;padding:4px 8px;margin-bottom:6px;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--pdf)}
+
+.thinking-dots{display:flex;gap:4px;padding:4px 0}
+.thinking-dots span{width:5px;height:5px;border-radius:50%;background:var(--ink3);animation:dot 1.1s infinite}
+.thinking-dots span:nth-child(2){animation-delay:.15s}
+.thinking-dots span:nth-child(3){animation-delay:.3s}
+@keyframes dot{0%,80%,100%{transform:scale(.5);opacity:.3}40%{transform:scale(1);opacity:1}}
+
+/* Input */
+.input-bar{padding:9px 12px;border-top:1px solid var(--border);background:var(--surface);display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.input-row{display:flex;gap:6px;align-items:flex-end}
+.input-wrap{flex:1}
+.input-wrap textarea{width:100%;min-height:40px;max-height:110px;resize:none;font-size:.78rem;background:var(--bg);font-family:'DM Sans',sans-serif}
+.attached-strip{display:flex;align-items:center;gap:7px;background:var(--pdf-l);border:1px solid #c4b5fd;border-radius:var(--r);padding:5px 9px;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--pdf)}
+.attached-strip .strip-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.attached-strip .strip-del{background:none;border:none;color:var(--ink3);cursor:pointer;font-size:.68rem;transition:color .15s}
+.attached-strip .strip-del:hover{color:var(--red)}
+.send{background:var(--ink);color:#fff;border:none;border-radius:var(--r);width:40px;height:40px;cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0}
+.send:hover{background:var(--accent)}
+.send:disabled{opacity:.35;cursor:not-allowed}
+.attach-btn{background:none;border:1px solid var(--border);border-radius:var(--r);width:40px;height:40px;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;color:var(--ink3)}
+.attach-btn:hover,.attach-btn.has-file{border-color:var(--pdf);color:var(--pdf);background:var(--pdf-l)}
+.hint{font-family:'DM Mono',monospace;font-size:.54rem;color:var(--ink3);padding:0 12px 5px;letter-spacing:.03em}
+.clear-btn{font-family:'DM Mono',monospace;font-size:.54rem;background:none;border:1px solid var(--border);color:var(--ink3);padding:3px 7px;border-radius:var(--r);cursor:pointer;transition:all .15s}
+.clear-btn:hover{border-color:var(--red);color:var(--red)}
+
+.toast{position:fixed;bottom:16px;right:16px;z-index:999;background:var(--ink);color:#fff;font-family:'DM Mono',monospace;font-size:.64rem;padding:7px 12px;border-radius:var(--r);display:none;animation:up .2s ease}
+
+.progress-overlay{position:fixed;inset:0;background:rgba(247,246,242,.88);display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;z-index:500;backdrop-filter:blur(4px)}
+.progress-overlay.show{display:flex}
+.progress-spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--pdf);border-radius:50%;animation:spin .8s linear infinite}
+.progress-label{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--ink3)}
+
+/* Mobile stack */
+@media(max-width:640px){
+  .body-row{flex-direction:column}
+  .sidebar{width:100%;height:50vh;border-right:none;border-bottom:1px solid var(--border)}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="wordmark">NUCLEUS <sub>IA CHIMIE ATOMIQUE</sub></div>
+    <div class="sep"></div>
+    <button class="top-btn" onclick="exportCfg()">↓ Config</button>
+    <button class="top-btn" onclick="triggerImportCfg()">↑ Config</button>
+    <button class="top-btn primary" onclick="clearChat()">Effacer</button>
+  </header>
+
+  <div class="body-row">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="panel-tabs">
+        <button class="ptab on" onclick="switchPanel('principes',this)">PRINCIPES</button>
+        <button class="ptab" onclick="switchPanel('fichiers',this)">FICHIERS PDF</button>
+        <button class="ptab" onclick="switchPanel('config',this)">CONFIG</button>
+      </div>
+
+      <!-- PRINCIPES -->
+      <div class="panel on" id="p-principes">
+        <p class="blurb">Vos lois atomiques. L'IA raisonne exclusivement depuis ce cadre.</p>
+        <div>
+          <div class="field-label">Axiomes actifs</div>
+          <div class="axiom-list" id="axiom-list"></div>
+        </div>
+        <div>
+          <div class="field-label">Nouvel axiome</div>
+          <textarea id="new-ax" rows="3" placeholder="Ex : L'atome est un tourbillon d'éther condensé…"></textarea>
+        </div>
+        <button class="add-btn" onclick="addAxiom()">+ Ajouter axiome</button>
+        <div class="divider"></div>
+        <div>
+          <div class="field-label">Extraire depuis un PDF</div>
+          <p class="blurb" style="margin-bottom:6px">L'IA lit votre PDF et en extrait automatiquement les principes.</p>
+          <button class="add-btn pdf-btn" onclick="triggerAxiomPDF()">📄 Charger un PDF d'axiomes</button>
+          <input type="file" id="pdf-axioms-input" accept="application/pdf" style="display:none" onchange="extractAxiomsFromPDF(event)">
+        </div>
+        <div>
+          <div class="field-label">Sévérité d'application</div>
+          <div class="sev-row">
+            <button class="sev-btn on" data-s="strict"   onclick="setSev(this)">Stricte</button>
+            <button class="sev-btn"    data-s="moderate" onclick="setSev(this)">Modérée</button>
+            <button class="sev-btn"    data-s="advisory" onclick="setSev(this)">Indicative</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- FICHIERS PDF -->
+      <div class="panel" id="p-fichiers">
+        <p class="blurb">Gérez les PDF scientifiques chargés en contexte permanent.</p>
+        <div>
+          <div class="field-label">📊 Données scientifiques (contexte permanent)</div>
+          <p class="blurb" style="margin-bottom:6px">Ces PDF sont joints à chaque échange comme référence.</p>
+          <div id="data-pdf-list"><p style="font-size:.66rem;color:var(--ink3);font-style:italic;font-family:'DM Mono',monospace">Aucun fichier chargé.</p></div>
+          <button class="add-btn pdf-btn" style="margin-top:8px" onclick="triggerDataPDF()">+ Ajouter données PDF</button>
+          <input type="file" id="pdf-data-input" accept="application/pdf" style="display:none" onchange="addDataPDF(event)">
+        </div>
+        <div class="divider"></div>
+        <div class="notice-pdf">📜 <strong>Roger Bacon — Genèse des métaux</strong> est pré-chargé automatiquement à chaque session (Miroir d'Alchimie, chap. II–VII). Vous pouvez ajouter d'autres fichiers ci-dessous.</div>
+        <div class="notice">⚡ Les PDF sont en mémoire de session uniquement — non sauvegardés entre rechargements.</div>
+      </div>
+
+      <!-- CONFIG -->
+      <div class="panel" id="p-config">
+        <div>
+          <div class="field-label">Nom de l'IA</div>
+          <input type="text" id="ai-name" value="NUCLEUS">
+        </div>
+        <div>
+          <div class="field-label">Domaine</div>
+          <input type="text" id="domain-txt" value="Chimie Atomique">
+        </div>
+        <div>
+          <div class="field-label">Instructions supplémentaires</div>
+          <textarea id="sys-extra" rows="4" placeholder="Ex : Ton académique. Évite de citer Bohr…"></textarea>
+        </div>
+        <button class="add-btn" onclick="saveConfig()">✓ Sauvegarder</button>
+        <div class="notice">⚡ Vos données restent dans votre navigateur. Rien n'est transmis à l'extérieur.</div>
+      </div>
+    </aside>
+
+    <!-- CHAT -->
+    <div class="chat-col">
+      <div class="chat-topbar">
+        <div class="chat-title">
+          <div class="live-dot"></div>
+          <span id="ai-name-top">NUCLEUS</span>
+          <span>— actif</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <div class="domain-pill" id="domain-pill">Chimie Atomique</div>
+          <button class="clear-btn" onclick="clearChat()">effacer</button>
+        </div>
+      </div>
+
+      <div class="messages" id="messages">
+        <div class="empty" id="empty-state">
+          <div class="empty-atom">⚛</div>
+          <p>Posez votre première question.<br>L'IA répondra selon vos axiomes.</p>
+        </div>
+      </div>
+
+      <div class="input-bar">
+        <div id="attached-strip" class="attached-strip" style="display:none">
+          <span>📄</span>
+          <span class="strip-name" id="strip-name"></span>
+          <button class="strip-del" onclick="detachPDF()">✕ retirer</button>
+        </div>
+        <div class="input-row">
+          <button class="attach-btn" id="attach-btn" title="Joindre un PDF à cette question" onclick="triggerChatPDF()">📎</button>
+          <input type="file" id="pdf-chat-input" accept="application/pdf" style="display:none" onchange="attachChatPDF(event)">
+          <div class="input-wrap">
+            <textarea id="usr-input" placeholder="Posez une question en chimie atomique…" rows="1"
+              onkeydown="onKey(event)" oninput="resize(this)"></textarea>
+          </div>
+          <button class="send" id="send-btn" onclick="send()">→</button>
+        </div>
+      </div>
+      <div class="hint">Entrée pour envoyer · Maj+Entrée nouvelle ligne · 📎 joindre un PDF</div>
+    </div>
+  </div>
+</div>
+
+<!-- Progress overlay -->
+<div class="progress-overlay" id="progress-overlay">
+  <div class="progress-spinner"></div>
+  <div class="progress-label" id="progress-label">Lecture du PDF…</div>
+</div>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="cfg-import-input" accept=".json" style="display:none" onchange="importCfg(event)">
+
+<script>
+// ── STATE ──
+let S={axioms:[],severity:'strict',aiName:'NUCLEUS',domain:'Chimie Atomique',sysExtra:'',messages:[]};
+let dataPDFs=[]; // [{name,b64,size}]
+let chatPDF=null; // {name,b64}
+
+const KEY='nucleus_v2';
+function loadState(){try{const d=localStorage.getItem(KEY);if(d)S={...S,...JSON.parse(d)};}catch{}renderAll();}
+function saveState(){localStorage.setItem(KEY,JSON.stringify(S));}
+
+// ── UTILS ──
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmtSize(b){return b>1024*1024?(b/1024/1024).toFixed(1)+' MB':(b/1024).toFixed(0)+' KB';}
+function toast(msg,dur=2400){const t=document.getElementById('toast');t.textContent='✓ '+msg;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',dur);}
+function showProgress(lbl){document.getElementById('progress-label').textContent=lbl;document.getElementById('progress-overlay').classList.add('show');}
+function hideProgress(){document.getElementById('progress-overlay').classList.remove('show');}
+function fileToB64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});}
+
+// ── PANELS ──
+function switchPanel(id,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ptab').forEach(b=>b.classList.remove('on'));
+  document.getElementById('p-'+id).classList.add('on');
+  btn.classList.add('on');
+}
+
+// ── AXIOMS ──
+function addAxiom(){const v=document.getElementById('new-ax').value.trim();if(!v)return;S.axioms.push(v);document.getElementById('new-ax').value='';saveState();renderAxioms();toast('Axiome ajouté');}
+function delAxiom(i){S.axioms.splice(i,1);saveState();renderAxioms();}
+function renderAxioms(){
+  const el=document.getElementById('axiom-list');
+  if(!S.axioms.length){el.innerHTML='<p style="font-size:.66rem;color:var(--ink3);font-style:italic;font-family:\'DM Mono\',monospace">Aucun axiome défini.</p>';return;}
+  el.innerHTML=S.axioms.map((a,i)=>`<div class="axiom-card"><span class="ax-num">§${i+1}</span><span class="ax-text">${esc(a)}</span><button class="ax-del" onclick="delAxiom(${i})">✕</button></div>`).join('');
+}
+
+// ── EXTRACT AXIOMS FROM PDF ──
+async function extractAxiomsFromPDF(e){
+  const file=e.target.files[0];if(!file)return;e.target.value='';
+  const b64=await fileToB64(file);
+  await extractAxiomsFromB64(b64);
+}
+async function extractAxiomsFromB64(b64){
+  showProgress('Extraction des axiomes…');
+  try{
+    const b64=await fileToB64(file);
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,
+        messages:[{role:'user',content:[
+          {type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},
+          {type:'text',text:'Lis ce document et extrais UNIQUEMENT les principes, lois, axiomes ou postulats fondamentaux.\nRéponds UNIQUEMENT avec une liste numérotée, un axiome par ligne, sans introduction.\nFormat : 1. [axiome]\n2. [axiome]...'}
+        ]}]})
+    });
+    const data=await res.json();
+    hideProgress();
+    const text=(data.content||[]).map(c=>c.text||'').join('');
+    const lines=text.split('\n').map(l=>l.trim()).filter(l=>/^\d+[\.\)]\s/.test(l));
+    if(!lines.length){toast('Aucun axiome trouvé.',3000);return;}
+    const extracted=lines.map(l=>l.replace(/^\d+[\.\)]\s+/,'').trim()).filter(Boolean);
+    extracted.forEach(a=>S.axioms.push(a));
+    saveState();renderAxioms();
+    toast(`${extracted.length} axiomes extraits`);
+  }catch(err){hideProgress();toast('Erreur : '+err.message,3500);}
+}
+
+// ── DATA PDFs ──
+async function addDataPDF(e){
+  const file=e.target.files[0];if(!file)return;e.target.value='';
+  if(file.size>20*1024*1024){alert('Fichier trop grand (max 20 MB).');return;}
+  showProgress('Chargement du fichier…');
+  try{const b64=await fileToB64(file);dataPDFs.push({name:file.name,b64,size:file.size});hideProgress();renderDataPDFs();toast('Fichier ajouté au contexte');}
+  catch(err){hideProgress();toast('Erreur : '+err.message,3000);}
+}
+function removeDataPDF(i){dataPDFs.splice(i,1);renderDataPDFs();}
+function renderDataPDFs(){
+  const el=document.getElementById('data-pdf-list');
+  if(!dataPDFs.length){el.innerHTML='<p style="font-size:.66rem;color:var(--ink3);font-style:italic;font-family:\'DM Mono\',monospace">Aucun fichier chargé.</p>';return;}
+  el.innerHTML=dataPDFs.map((f,i)=>{
+    const icon=f.isText?'📜':'📊';
+    const sizeLabel=f.isText?`${(f.size/1024).toFixed(0)} KB · texte`:fmtSize(f.size);
+    const locked=f.isText?`<span style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--pdf);margin-left:4px">pré-chargé</span>`:'';
+    return `<div class="pdf-card"><span class="pdf-icon">${icon}</span><div class="pdf-info"><div class="pdf-name">${esc(f.name)}${locked}</div><div class="pdf-size">${sizeLabel}</div></div><button class="pdf-del" onclick="removeDataPDF(${i})">✕</button></div>`;
+  }).join('');
+}
+
+// ── CHAT PDF ──
+
+// ── TRIGGERS PDF (Android bridge ou fallback navigateur) ──
+function triggerAxiomPDF(){
+  if(window.AndroidBridge&&window.AndroidBridge.isAndroid())
+    window.AndroidBridge.openAxiomPdfPicker();
+  else document.getElementById('pdf-axioms-input').click();
+}
+function triggerDataPDF(){
+  if(window.AndroidBridge&&window.AndroidBridge.isAndroid())
+    window.AndroidBridge.openDataPdfPicker();
+  else document.getElementById('pdf-data-input').click();
+}
+
+// ── CALLBACKS ANDROID → JS ──
+// PDF de contexte reçu depuis Android
+window.onDataPDFReceived=function(name,b64,size){
+  dataPDFs.push({name,b64,size:parseInt(size)||0});
+  renderDataPDFs();
+  toast('Fichier ajouté au contexte');
+};
+// PDF d'axiomes reçu depuis Android — on lance l'extraction via l'API
+window.onAxiomPDFReceived=function(b64){
+  extractAxiomsFromB64(b64);
+};
+
+function triggerChatPDF(){
+  // Use Android bridge if available, else standard input
+  if(window.AndroidBridge&&window.AndroidBridge.isAndroid()){
+    window.AndroidBridge.openPdfPicker();
+  }else{
+    document.getElementById('pdf-chat-input').click();
+  }
+}
+async function attachChatPDF(e){
+  const file=e.target.files[0];if(!file)return;e.target.value='';
+  if(file.size>20*1024*1024){alert('Fichier trop grand (max 20 MB).');return;}
+  showProgress('Chargement du PDF…');
+  try{
+    const b64=await fileToB64(file);
+    chatPDF={name:file.name,b64};
+    hideProgress();
+    document.getElementById('strip-name').textContent=file.name;
+    document.getElementById('attached-strip').style.display='flex';
+    document.getElementById('attach-btn').classList.add('has-file');
+    toast('PDF joint à votre prochaine question');
+  }catch(err){hideProgress();toast('Erreur : '+err.message,3000);}
+}
+// Called from Android bridge
+window.onChatPDFReceived=function(name,b64){
+  chatPDF={name,b64};
+  document.getElementById('strip-name').textContent=name;
+  document.getElementById('attached-strip').style.display='flex';
+  document.getElementById('attach-btn').classList.add('has-file');
+  toast('PDF joint à votre prochaine question');
+};
+function detachPDF(){
+  chatPDF=null;
+  document.getElementById('attached-strip').style.display='none';
+  document.getElementById('attach-btn').classList.remove('has-file');
+}
+
+// ── SEVERITY ──
+function setSev(btn){document.querySelectorAll('.sev-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');S.severity=btn.dataset.s;saveState();}
+function renderSev(){document.querySelectorAll('.sev-btn').forEach(b=>b.classList.toggle('on',b.dataset.s===S.severity));}
+
+// ── CONFIG ──
+function saveConfig(){
+  S.aiName=document.getElementById('ai-name').value.trim()||'NUCLEUS';
+  S.domain=document.getElementById('domain-txt').value.trim()||'Chimie Atomique';
+  S.sysExtra=document.getElementById('sys-extra').value;
+  saveState();renderHeader();toast('Configuration sauvegardée');
+}
+function renderHeader(){
+  document.getElementById('ai-name-top').textContent=S.aiName;
+  document.getElementById('domain-pill').textContent=S.domain;
+  document.getElementById('ai-name').value=S.aiName;
+  document.getElementById('domain-txt').value=S.domain;
+  document.getElementById('sys-extra').value=S.sysExtra||'';
+}
+
+// ── PROMPT ──
+function buildPrompt(){
+  const sevMap={strict:'Tu DOIS raisonner EXCLUSIVEMENT depuis ces axiomes. Toute théorie conventionnelle qui les contredit est INTERDITE.',moderate:'Tes axiomes priment. Cite-les chaque fois qu\'ils s\'appliquent.',advisory:'Tes axiomes guident ton raisonnement. Tu peux les intégrer librement.'};
+  let p=`Tu es ${S.aiName}, une IA spécialisée en ${S.domain}.\n\nRÈGLE FONDAMENTALE :\n${sevMap[S.severity]}\n\n`;
+  if(S.axioms.length){p+=`TES AXIOMES :\n`;S.axioms.forEach((a,i)=>p+=`§${i+1}. ${a}\n`);p+='\n';}
+  p+=`STYLE : Cite les axiomes §N pertinents. Sois précis et rigoureux.\n`;
+  if(dataPDFs.length)p+=`\nDes données scientifiques de référence sont fournies dans le contexte (dont les données de Roger Bacon sur la genèse des métaux, tirées du Miroir d'Alchimie). Utilise-les pour enrichir tes raisonnements.\n`;
+  if(S.sysExtra)p+=`\nINSTRUCTIONS COMPLÉMENTAIRES :\n${S.sysExtra}\n`;
+  return p;
+}
+function buildUserContent(text){
+  const parts=[];
+  dataPDFs.forEach(f=>{
+    if(f.isText){
+      // Données texte pré-chargées (ex : Roger Bacon)
+      parts.push({type:'text',text:`[DONNÉES DE RÉFÉRENCE — ${f.name}]\n\n${f.textContent}\n\n[FIN DES DONNÉES DE RÉFÉRENCE]`});
+    } else {
+      parts.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:f.b64},title:f.name,context:'Données scientifiques de référence'});
+    }
+  });
+  if(chatPDF)parts.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:chatPDF.b64},title:chatPDF.name,context:'Document joint à cette question'});
+  parts.push({type:'text',text});
+  return parts;
+}
+
+// ── CHAT ──
+let busy=false;
+async function send(){
+  const ta=document.getElementById('usr-input');
+  const txt=ta.value.trim();
+  if(!txt||busy)return;
+  ta.value='';ta.style.height='auto';
+  document.getElementById('empty-state')?.remove();
+  const attachedName=chatPDF?.name||null;
+  const userContent=buildUserContent(txt);
+  S.messages.push({role:'user',content:txt});
+  renderMsg('user',txt,attachedName);
+  if(chatPDF)detachPDF();
+  busy=true;document.getElementById('send-btn').disabled=true;
+  const tid=renderThinking();
+  const apiMessages=S.messages.slice(0,-1).map(m=>({role:m.role,content:m.content}));
+  apiMessages.push({role:'user',content:userContent});
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:buildPrompt(),messages:apiMessages})});
+    const data=await res.json();
+    document.getElementById(tid)?.remove();
+    const reply=(data.content||[]).map(c=>c.text||'').join('');
+    if(reply){S.messages.push({role:'assistant',content:reply});renderMsg('ai',reply);saveState();}
+    else renderMsg('ai','⚠ Réponse inattendue. '+(data.error?.message||''));
+  }catch(err){document.getElementById(tid)?.remove();renderMsg('ai',`⚠ Erreur : ${err.message}`);}
+  busy=false;document.getElementById('send-btn').disabled=false;
+}
+function renderMsg(role,text,pdfName=null){
+  const box=document.getElementById('messages');
+  const d=document.createElement('div');d.className=`msg ${role}`;
+  const label=role==='user'?'Vous':S.aiName;
+  const pdfStrip=pdfName?`<div class="pdf-attach-preview">📄 ${esc(pdfName)}</div>`:'';
+  d.innerHTML=`<div class="msg-role">${label}</div><div class="bubble">${pdfStrip}${fmt(text)}</div>`;
+  box.appendChild(d);box.scrollTop=box.scrollHeight;
+}
+function renderThinking(){
+  const box=document.getElementById('messages');const id='th'+Date.now();const d=document.createElement('div');
+  d.id=id;d.className='msg ai';d.innerHTML=`<div class="msg-role">${S.aiName}</div><div class="bubble"><div class="thinking-dots"><span></span><span></span><span></span></div></div>`;
+  box.appendChild(d);box.scrollTop=box.scrollHeight;return id;
+}
+function fmt(t){return esc(t).replace(/§(\d+)/g,'<span class="ax-ref">§$1</span>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>').replace(/\n/g,'<br>');}
+function clearChat(){if(!S.messages.length||confirm('Effacer tout le chat ?')){S.messages=[];saveState();document.getElementById('messages').innerHTML=`<div class="empty" id="empty-state"><div class="empty-atom">⚛</div><p>Posez votre première question.<br>L'IA répondra selon vos axiomes.</p></div>`;}}
+function onKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
+function resize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,110)+'px';}
+
+// ── CONFIG IMPORT/EXPORT ──
+function exportCfg(){
+  // Use Android bridge if available
+  if(window.AndroidBridge&&window.AndroidBridge.isAndroid()){
+    window.AndroidBridge.saveExportFile(JSON.stringify({axioms:S.axioms,severity:S.severity,aiName:S.aiName,domain:S.domain,sysExtra:S.sysExtra},null,2));
+  }else{
+    const blob=new Blob([JSON.stringify({axioms:S.axioms,severity:S.severity,aiName:S.aiName,domain:S.domain,sysExtra:S.sysExtra},null,2)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='nucleus-config.json';a.click();
+  }
+  toast('Configuration exportée');
+}
+function triggerImportCfg(){
+  if(window.AndroidBridge&&window.AndroidBridge.isAndroid()){window.AndroidBridge.openImportPicker();}
+  else document.getElementById('cfg-import-input').click();
+}
+function importCfg(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=ev=>{try{applyConfig(ev.target.result);}catch{alert('Fichier invalide');}};r.readAsText(f);e.target.value='';
+}
+function applyConfig(jsonStr){
+  const d=JSON.parse(jsonStr);
+  if(d.axioms)S.axioms=d.axioms;if(d.severity)S.severity=d.severity;
+  if(d.aiName)S.aiName=d.aiName;if(d.domain)S.domain=d.domain;
+  if(d.sysExtra!==undefined)S.sysExtra=d.sysExtra;
+  saveState();renderAll();toast('Configuration importée');
+}
+// Android bridge callbacks
+window.onImportReceived=function(jsonStr){try{applyConfig(jsonStr);}catch{alert('Fichier invalide');}};
+
+// ── DONNÉES PRÉ-CHARGÉES : Roger Bacon — Genèse des métaux ──
+// Extrait du "Miroir d'Alchimie" (Speculum Alchemiae), chapitres II à V
+// Source : Cinq Traités d'Alchimie, trad. Albert Poisson, Paris, 1890
+const BACON_DATA = {
+  name: 'Roger Bacon — Genèse des métaux (Miroir d\'Alchimie)',
+  isText: true,
+  content: `ROGER BACON — MIROIR D'ALCHIMIE (Speculum Alchemiae)
+Source : Cinq Traités d'Alchimie, trad. Albert Poisson, Paris 1890
+Chapitres II à V : Principes naturels et génération des métaux
+
+═══════════════════════════════════════════════════
+CHAPITRE II — DES PRINCIPES NATURELS ET DE LA GÉNÉRATION DES MÉTAUX
+═══════════════════════════════════════════════════
+
+Les principes des métaux sont le Mercure et le Soufre. Ces deux principes ont donné naissance à tous les métaux et à tous les minéraux, dont il existe un grand nombre d'espèces différentes.
+
+La nature a toujours eu pour but et s'efforce sans cesse d'arriver à la perfection, à l'or. Mais par suite de divers accidents qui entravent sa marche, naissent les variétés métalliques.
+
+Selon la pureté ou l'impureté des deux principes composants — Soufre et Mercure — il se produit des métaux parfaits ou imparfaits : l'or, l'argent, l'étain, le plomb, le cuivre, le fer.
+
+NATURE DES MÉTAUX (classification par Bacon) :
+
+• OR : Corps parfait, composé d'un Mercure pur, fixe, brillant, rouge, et d'un Soufre pur, fixe, rouge, non combustible. L'Or est parfait.
+
+• ARGENT : Corps pur, presque parfait, composé d'un Mercure pur, presque fixe, brillant, blanc. Son Soufre a les mêmes qualités. Il manque à l'Argent un peu plus de fixité, de couleur et de poids.
+
+• ÉTAIN : Corps pur, imparfait, composé d'un Mercure pur, fixe et volatil, brillant, blanc à l'extérieur, rouge à l'intérieur. Son Soufre a les mêmes qualités. Il manque seulement à l'étain d'être un peu plus cuit et digéré.
+
+• PLOMB : Corps impur et imparfait, composé d'un Mercure impur, instable, terrestre, pulvérulent, légèrement blanc à l'extérieur, rouge à l'intérieur. Son Soufre est semblable et combustible. Il manque au plomb la pureté, la fixité, la couleur ; il n'est pas assez cuit.
+
+• CUIVRE : Métal impur et imparfait, composé d'un Mercure impur, instable, terrestre, combustible, rouge, sans éclat. Même caractère pour son Soufre. Il manque au cuivre la fixité, la pureté, le poids. Il contient trop de couleur impure et de parties terreuses incombustibles.
+
+• FER : Corps impur, imparfait, composé d'un Mercure impur, trop fixe, contenant des parties terreuses combustibles, blanc et rouge mais sans éclat. Il lui manque la fusibilité, la pureté, le poids ; il contient trop de Soufre fixe impur et de parties terreuses combustibles.
+
+═══════════════════════════════════════════════════
+CHAPITRE III — D'OÙ DOIT ÊTRE TIRÉE LA MATIÈRE DE L'ÉLIXIR
+═══════════════════════════════════════════════════
+
+Tous les métaux sont composés de Mercure et de Soufre. L'impureté et l'imperfection des composants se retrouve dans le composé. Comme on ne peut ajouter aux métaux que des substances tirées d'eux-mêmes, aucune matière étrangère ne peut servir — mais tout ce qui est composé des deux principes suffit pour perfectionner et transmuer les métaux.
+
+Deux principes composent tous les métaux, et rien ne peut s'attacher, s'unir aux métaux ou les transformer, s'il n'est lui-même composé des deux principes. La raison force donc à prendre pour Matière de la Pierre : le Mercure et le Soufre.
+
+Le Mercure seul, le Soufre seul ne peuvent engendrer les métaux ; mais par leur union, ils donnent naissance aux divers métaux et à de nombreux minéraux. Notre Pierre doit naître de ces deux principes.
+
+SECRET FONDAMENTAL : L'Or est un corps parfait et mâle sans superfluité ni pauvreté. L'argent est un corps presque parfait et femelle. Pour qu'un corps puisse perfectionner les métaux imparfaits, il faut qu'il soit plus que parfait — au double, au quadruple, au centuple.
+
+Il faut choisir une matière qui contienne un Mercure pur, clair, blanc et rouge, pas complètement parfait, mélangé dans les proportions voulues avec un Soufre semblable. Cette matière doit être coagulée en masse solide, susceptible d'être purifiée et perfectionnée par le feu artificiel, jusqu'à être des milliers de fois plus pure que les corps ordinaires.
+
+═══════════════════════════════════════════════════
+CHAPITRE IV — DE LA MANIÈRE DE RÉGLER LE FEU
+═══════════════════════════════════════════════════
+
+La nature perfectionne chaque jour les métaux dans les mines : les éléments grossiers se cuisent et s'épaississent par la chaleur constante des montagnes, se transformant en Mercure ; la même chaleur transforme les parties grasses de la terre en Soufre. Appliquée longtemps à ces deux principes, cette chaleur engendre selon leur pureté ou impureté tous les métaux.
+
+La nature produit et perfectionne tous les métaux par la seule cuisson.
+
+Règles du feu selon les Philosophes :
+— "Le feu et l'azoth doivent te suffire."
+— "La chaleur perfectionne tout."
+— "Il faut cuire, cuire, recuire et ne pas s'en fatiguer."
+— "Que votre feu soit calme et doux ; qu'il se maintienne ainsi chaque jour, toujours uniforme, sans faiblir."
+— "Sois patient et persévérant."
+— "Tout notre magistère se fait d'une chose, la Pierre, d'une seule façon, en cuisant et dans un seul vase."
+— Dans le régime de l'Œuvre, il faut augmenter le feu peu à peu et par degrés jusqu'à la fin.
+
+═══════════════════════════════════════════════════
+CHAPITRE V — DU VAISSEAU ET DU FOURNEAU
+═══════════════════════════════════════════════════
+
+La nature cuit les métaux dans les mines avec un feu naturel, dans un vaisseau propre à la cuisson. L'alchimiste doit imiter la nature.
+
+Structure d'une mine : sous la montagne, un feu produit une chaleur égale qui monte sans cesse. En s'élevant, elle dessèche et coagule l'eau grossière contenue dans les entrailles de la terre, la transformant en Mercure. Les parties onctueuses minérales sont cuites, coulent à travers la montagne, engendrant le Soufre. Le Soufre rencontre le Mercure, il y a coagulation de l'eau métallique. La chaleur continuant, les métaux apparaissent après un temps très long.
+
+La montagne est parfaitement close de tous côtés par des rochers, car si la chaleur pouvait s'échapper, jamais les métaux ne naîtraient.
+
+Prescriptions pour le vaisseau :
+— Rond, avec un petit col.
+— En verre ou en terre aussi résistante que le verre.
+— Fermé hermétiquement avec un couvercle et du bitume.
+— Le feu ne doit pas être appliqué à nu : placer le vaisseau dans un autre vase fermé, de sorte qu'une chaleur égale agisse sur la matière en haut, en bas, partout.
+— Aristote (alchimiste) : le Mercure doit être cuit dans un triple vaisseau en verre très dur, ou en terre possédant la dureté du verre.
+
+═══════════════════════════════════════════════════
+CHAPITRE VI — DES COULEURS PENDANT L'ŒUVRE
+═══════════════════════════════════════════════════
+
+Séquence des couleurs lors de la cuisson de la Pierre :
+
+1. NOIRCEUR (putréfaction) — première opération. "Dans cette noirceur se cache la blancheur."
+2. ROUGEUR transitoire — la pierre rougit, jaunit et se liquéfie avant la vraie blancheur.
+3. VERDEUR — "Cuis jusqu'à ce qu'un enfant vert apparaisse ; c'est l'âme de la pierre."
+4. COULEURS DU PAON — toutes les couleurs imaginables apparaissent avant la blancheur.
+5. BLANCHEUR — "Le corps sera cuit jusqu'à ce qu'il devienne brillant comme les yeux des poissons."
+6. COULEUR CENDRÉE — entre le blanc et le rouge.
+7. ROUGE final — "Sous la blancheur se cache le rouge ; il faut l'en extraire en augmentant le feu."
+
+═══════════════════════════════════════════════════
+CHAPITRE VII — DE LA PROJECTION SUR LES MÉTAUX IMPARFAITS
+═══════════════════════════════════════════════════
+
+L'Élixir rouge jaunit à l'infini et transforme en or pur tous les métaux.
+L'Élixir blanc blanchit à l'infini et donne aux métaux la blancheur parfaite.
+
+Les métaux les plus proches de la perfection deviennent parfaits plus rapidement et plus complètement sous l'action de l'Élixir.
+
+Principe de similitude : "Nature contient Nature, Nature se réjouit de Nature, Nature domine Nature et se transforme dans les autres Natures." — La nature se répand rapidement dans son propre corps ; on ne peut l'unir à un corps étranger.
+
+Procédé de projection :
+— Mêler une partie d'Élixir avec mille du métal le plus prochain.
+— Enfermer dans un vaisseau hermétiquement scellé.
+— Mettre au fourneau à fixer.
+— Chauffer d'abord lentement, augmenter graduellement le feu pendant trois jours jusqu'à union parfaite.
+— Projeter ensuite une partie du produit sur mille de métal prochain : transmutation en un jour, une heure, un moment.
+
+═══════════════════════════════════════════════════
+DÉFINITION DE L'ALCHIMIE SELON ROGER BACON
+═══════════════════════════════════════════════════
+
+"L'Alchimie est la science qui enseigne à préparer une certaine Médecine ou élixir, laquelle étant projetée sur les métaux imparfaits, leur donne la perfection dans le moment même de la projection."
+
+Hermès : "L'Alchimie est la science immuable qui travaille sur les corps à l'aide de la théorie et de l'expérience, et qui, par une conjonction naturelle, les transforme en une espèce supérieure plus précieuse."
+`
+};
+
+// Injecter au démarrage si pas déjà présent dans la session
+function injectBaconData() {
+  const alreadyLoaded = dataPDFs.some(f => f.name === BACON_DATA.name);
+  if (!alreadyLoaded) {
+    dataPDFs.push({
+      name: BACON_DATA.name,
+      isText: true,
+      textContent: BACON_DATA.content,
+      size: new Blob([BACON_DATA.content]).size
+    });
+  }
+}
+
+// ── RENDER ALL ──
+function renderAll(){
+  renderAxioms();renderSev();renderHeader();renderDataPDFs();
+  const box=document.getElementById('messages');box.innerHTML='';
+  if(!S.messages.length){box.innerHTML=`<div class="empty" id="empty-state"><div class="empty-atom">⚛</div><p>Posez votre première question.<br>L'IA répondra selon vos axiomes.</p></div>`;}
+  else S.messages.forEach(m=>renderMsg(m.role,m.content));
+}
+loadState();
+injectBaconData();
+renderDataPDFs();
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Nucleus" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">#1a1916</item>
+        <item name="colorPrimaryVariant">#1d4ed8</item>
+        <item name="colorOnPrimary">#ffffff</item>
+        <item name="colorSecondary">#7c3aed</item>
+        <item name="colorOnSecondary">#ffffff</item>
+        <item name="android:colorBackground">#f7f6f2</item>
+        <item name="android:statusBarColor">#ffffff</item>
+        <item name="android:navigationBarColor">#ffffff</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>
